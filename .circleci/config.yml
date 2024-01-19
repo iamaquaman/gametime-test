@@ -12,6 +12,10 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
+     # - run:
+     #     name: Unit test
+     #     command: |
+     #       Command that runs unit tests 
       - run:
           name: Build and push Image
           command: |
@@ -45,7 +49,7 @@ jobs:
             # Deploy the packaged chart
             helm upgrade --install --create-namespace \
               --namespace staging-fibonacci-app \
-              -f charts/staging.yaml \
+              -f charts/staging.yml \
               staging-fibonacci-app \
               packaged-charts/$PACKAGED_CHART
 
@@ -58,4 +62,4 @@ workflows:
             - build-push
           filters:
             branches:
-              only: master
+              only: main
