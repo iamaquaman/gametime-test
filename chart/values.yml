@@ -1,0 +1,14 @@
+web:
+  replicas: 1
+  image: fibonacci-app
+  tag: ""
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 100m
+    limits:
+      memory: 256Mi
+      cpu: 200m
+ingress:
+  rules:
+    - host: fibonacci-app.com
