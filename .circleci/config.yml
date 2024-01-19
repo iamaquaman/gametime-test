@@ -1,0 +1,61 @@
+version: 2.1
+
+orbs:
+  aws-cli: circleci/aws-cli@1.3.1
+  docker: circleci/docker@2.4.0
+  helm: circleci/helm@3.0.1
+  kubernetes: circleci/kubernetes@1.3.1
+
+jobs:
+  build-push:
+    executor: docker/docker-executor
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Build and push Image
+          command: |
+            cd python
+            docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD   #This assumes you have set the environment variables in CircleCI#
+            docker build Dockerfile -t fibonacci-app:tag .
+            docker tag fibonacci-app:tag $DOCKERHUB_USERNAME/fibonacci:tag
+            docker push $DOCKERHUB_USERNAME/fibonacci-app:tag
+  deploy-helm-chart:
+    executor: docker/docker-executor
+    steps:
+      - checkout
+      - aws-cli/setup
+      - kubernetes/install-kubectl
+      - install_helm_client:
+          version: v3.13.1
+      - run:
+          name: Update Kubeconfig
+          command: |
+            aws eks --region us-east-1 update-kubeconfig --name jonathan-eks-cluster
+      # Package and Deploy using Helm
+      - run:
+          name: Package and Deploy with Helm
+          command: |
+            # Package the Helm chart
+            helm package charts/ -d packaged-charts/
+
+            # Find the packaged chart file
+            PACKAGED_CHART=$(ls packaged-charts/ | grep .tgz)
+
+            # Deploy the packaged chart
+            helm upgrade --install --create-namespace \
+              --namespace staging-fibonacci-app \
+              -f charts/staging.yaml \
+              staging-fibonacci-app \
+              packaged-charts/$PACKAGED_CHART
+
+workflows:
+  build-and-deploy:
+    jobs: 
+      - build-push
+      - deploy-helm-chart:
+          requires:
+            - build-push
+          filters:
+            branches:
+              only: master
