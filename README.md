@@ -14,6 +14,6 @@ helm upgrade --install --create-namespace \
   charts/
 ```
 
-*CircleCI**
+**CircleCI**
 
 The CircleCI config assumes you have environment variables injected via the Console and that you have access to an EKS cluster.
